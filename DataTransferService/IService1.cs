@@ -3,7 +3,6 @@ using System.ServiceModel;
 
 namespace DataTransferService
 {
-    // NOTE: You can use the "Rename" command on the "Refactor" menu to change the interface name "IService1" in both code and config file together.
     [ServiceContract]
     public interface IService1
     {
@@ -20,12 +19,11 @@ namespace DataTransferService
         string MoveData(string jsonMapping);
 
 
-
         //CANT HAVE METHOD OVERLOAD IN WCF!!!!
         //[OperationContract]
-        [OperationContract(Name = "MoveDataReport")]
-        //Overload - also includes jsonReportMapping
-        string MoveData(string jsonMapping, string jsonReportMapping);
+        //[OperationContract(Name = "MoveDataReport")]
+        ////--Overload - also includes jsonReportMapping
+        //string MoveData(string jsonMapping, string jsonReportMapping);
     }
 
 
@@ -58,7 +56,55 @@ namespace DataTransferService
 
         [DataMember(Name = "where")]
         public string Where { get; set; }
+
+        //NEW
+        [DataMember(Name = "reportToCdmDetails")]
+        public ReportToCdmDetail ReportToCdmDetails { get; set; }
     }
+
+    //NEW
+    [DataContract]
+    public class ReportToCdmDetail
+    {
+        [DataMember(Name = "reportMappingName")]
+        public string ReportMappingName { get; set; }
+
+        [DataMember(Name = "reportSource")]
+        public string ReportSource { get; set; }
+
+        [DataMember(Name = "reportMappingDetails")]
+        public ReportMappingDetail[] ReportMappingDetails { get; set; }
+
+        [DataMember(Name = "reportJoinToCdmDetails")]
+        public ReportJoinToCdmDetail[] ReportJoinToCdmDetails { get; set; }
+
+        [DataMember(Name = "reportWhere")]
+        public string ReportWhere { get; set; }
+    }
+
+    //NEW
+    [DataContract]
+    public class ReportMappingDetail
+    {
+        [DataMember(Name = "destination")]
+        public string Destination { get; set; }
+
+        [DataMember(Name = "source")]
+        public string Source { get; set; }
+    }
+
+
+    //NEW
+    [DataContract]
+    public class ReportJoinToCdmDetail
+    {
+        [DataMember(Name = "cdmColumn")]
+        public string CdmColumn { get; set; }
+
+        [DataMember(Name = "reportSourceColumn")]
+        public string ReportSourceColumn { get; set; }
+    }
+
 
 
     [DataContract]
@@ -79,17 +125,6 @@ namespace DataTransferService
         [DataMember(Name = "createTable")]
         public bool createTable { get; set; }
     }
-
-
-    //[DataContract]
-    //public class SourceDetail
-    //{
-    //    [DataMember(Name = "database")]
-    //    public string Database { get; set; }
-
-    //    [DataMember(Name = "table")]
-    //    public string Table { get; set; }
-    //}
 
 
     [DataContract]
@@ -114,47 +149,6 @@ namespace DataTransferService
 
         [DataMember(Name = "rightObjectAlias")]
         public string RightObjectAlias { get; set; }
-    }
-
-
-    /// <summary>
-    /// Report Source Mapping to the CDM
-    /// </summary>
-    [DataContract]
-    public class ReportMapping
-    {
-        [DataMember(Name = "mappingName")]
-        public string MappingName { get; set; }
-
-        [DataMember(Name = "reportSource")]
-        public string ReportSource { get; set; }
-
-        [DataMember(Name = "reportMappingDetails")]
-        public ReportMappingDetail[] ReportMappingDetails { get; set; }
-
-        [DataMember(Name = "joinToCdmDetails")]
-        public JoinToCdmDetail[] JoinToCdmDetails { get; set; }
-    }
-
-
-    [DataContract]
-    public class ReportMappingDetail
-    {
-        [DataMember(Name = "destination")]
-        public string Destination { get; set; }
-
-        [DataMember(Name = "source")]
-        public string Source { get; set; }
-    }
-
-    [DataContract]
-    public class JoinToCdmDetail
-    {
-        [DataMember(Name = "cdmColumn")]
-        public string CdmColumn { get; set; }
-
-        [DataMember(Name = "reportSourceColumn")]
-        public string ReportSourceColumn { get; set; }
     }
 
 }

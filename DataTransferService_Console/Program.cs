@@ -16,7 +16,7 @@ namespace DataTransferService_Console
             //Setup Service
             var serviceRef = new ServiceReference1.Service1Client();
 
-            //Service GetData
+            //Simple Service GetData To Confirm Service Is Working
             string x = serviceRef.GetData(5);
             Console.WriteLine(x);
 
@@ -26,197 +26,64 @@ namespace DataTransferService_Console
             //CT.StringValue = "CHARLIE";
             //Console.WriteLine(serviceRef.GetDataUsingDataContract(CT).StringValue);
 
-
+            //Test Parsing to JSON Object
             //JObject json = JObject.Parse(JsonFile.Text);
             //var details = JObject.Parse(JsonFile.Text);
 
 
+            //TEST Combining Json 
+            string cdmJson = JsonFile.Text;
+            string reportJson = JsonFile.Text2;
+
+            reportJson = reportJson.Replace("<PARAMETER_VALUE>", @"Rpt in (\'RPT1234\', \'RPT4567\' )");
+            cdmJson = cdmJson.Replace("<REPORT_CDM_PARAMETER>", reportJson);
+
+            //HERE:
             //Service MoveData
             //string y = serviceRef.MoveData(JsonFile.Text);
+            string y = serviceRef.MoveData(cdmJson);
+            //string y = serviceRef.MoveDataReport(JsonFile.Text, JsonFile.Text2);
 
-            string y = serviceRef.MoveDataReport(JsonFile.Text, JsonFile.Text2);
             Console.WriteLine("DataTransfer Result: " + y);
-
-            //mergeJson();
 
             Console.ReadLine();
         }
 
 
-
-        //public static void mergeJson()
-        //{
-
-        //    var dataObject1 = JObject.Parse(@"{
-        //            ""data"": [{
-        //                ""id"": ""id1"",
-        //                ""field"": ""field1"",
-        //                ""name"": ""charlie""
-        //            }],
-        //            ""paging"": {
-        //                ""prev"": ""link1"",
-        //            }
-        //        }");
-        //    var dataObject2 = JObject.Parse(@"{
-        //        ""data"": [{
-        //            ""id"": ""id2"",
-        //            ""field"": ""field2""
-        //        }],
-        //        ""paging"": {
-        //            ""prev"": ""link2"",
-        //        }
-        //    }");
-
-        //    //[{"id":"id1","field":"field1"},{"id":"id2","field":"field2"}]
-
-
-        //    var mergeSettings = new JsonMergeSettings
-        //    {
-        //        MergeArrayHandling = MergeArrayHandling.Union
-        //    };
-
-        //    // method 1
-        //    (dataObject1.SelectToken("data") as JArray).Merge(dataObject2.SelectToken("data"), mergeSettings);
-        //    // method 2
-        //    //dataObject1.Merge(dataObject2, mergeSettings);
-
-        //    var mergedArray = dataObject1.SelectToken("data") as JArray;
-
-        //    //Console.WriteLine(mergedArray.ToString(Formatting.None));
-        //}
-
-
         //Validate Json Online:
         //https://jsonlint.com/
 
-        //{ 'server' : 'ds-fld-002', 'database' : 'Architecture', 'table' : 'dbo.CommonCDM', 'alias' : 'b'}
         public static class JsonFile
         {
             public static string Text = @"{
-                                            'mappingName' : 'Aetna ACAS Header Standard Reports',
+                                            'mappingName' : 'Aetna ACAS CDM',
                                             
                                            'sourceServer' : '(localdb)\\MSSQLLocalDB', 
 
-                                            'destinationDetails' : { 'server' : '(localdb)\\MSSQLLocalDB', 'database' : 'KPI_Database', 'table' : 'dbo.NEW', 'createTable' : true},
+                                            'destinationDetails' : { 'server' : '(localdb)\\MSSQLLocalDB', 'database' : 'KPI_Database', 'table' : 'dbo.NewCDM', 'createTable' : true},
 
                                             'mappingDetails' : [
                                                                 { 'destination' : 'Id',     'source' : 'Id' },
-                                                                { 'destination' : 'FName',  'source' : 'FirstName'},
-                                                                { 'destination' : 'LName',  'source' : 'LastName'}
+                                                                { 'destination' : 'ClaimKey',  'source' : 'RCEClaimKey'},
+                                                                { 'destination' : 'cnlyClaimNumber',  'source' : 'ClaimNumber'},
+                                                                { 'destination' : 'ProviderNumber',  'source' : 'ProviderId'},
+                                                                { 'destination' : 'MemberNumber',  'source' : 'MemberId'}
                                                                ],
-                                            'from' : 'KPI_Database.dbo.Table1',
+                                            'from' : 'KPI_Database.dbo.AetnaHeader',
+                                            'where' : 'FinalAction=1',
 
-                                            'where' : 'FirstName=\'Jon\''
+                                            'reportToCdmDetails' : <REPORT_CDM_PARAMETER>
                                         }";
 
             public static string Text2 = @"{
-	                                            'mappingName' : 'Aetna ACAS Header Standard Reports',
-	                                            'reportSource' : 'KPI_Database.dbo.TableJoin',
-	                                            'reportMappingDetails' : [
-						                                            { 'destination' : 'ClaimNumber',     'source' : 'Claim' }
-					                                               ],
-	                                            'joinToCdmDetails' : [ {'cdmColumn' : 'LName',  'reportSourceColumn' : 'LstName'} ],
-	                                            'where' : 'LstName=\'Smith\''
+	                                            'reportMappingName' : 'Aetna ACAS Header Standard Reports',
+	                                            'reportSource' : 'KPI_Database.dbo.AetnaStandardReportHeader',
+	                                            'reportMappingDetails' : [ { 'destination' : 'ReportNumber', 'source' : 'Rpt' } ],
+	                                            'reportJoinToCdmDetails' : [ {'cdmColumn' : 'ClaimKey',  'reportSourceColumn' : 'RCEClaimKey'} ],
+	                                            'reportWhere' : '<PARAMETER_VALUE>'
                                             }";
+                                        //  'reportWhere' : {'<PARAMETER_KEY>' : '<PARAMETER_VALUE>' }
 
-            //public static string Text2 = @"{
-	           //                                 'mappingName' : 'Aetna ACAS Header Standard Reports',
-	           //                                 'reportSource' : 'AetnaTraditionalStandardReports.dbo.cnlyClaimHeaderReport',
-	           //                                 'reportMappingDetails' : [
-						      //                                      { 'destination' : 'Report',     'source' : 'Rpt' }
-					       //                                        ],
-	           //                                 'joinToCdmDetails' : [ {'cdmColumn' : 'ClaimNumber',  'reportSourceColumn' : 'ClaimNumber'} ],
-	           //                                 'where' : 'Report=\'Rpt1234\''
-            //                                }";
-
-            //public static string Text = @"{
-            //                                'mappingName' : 'Aetna ACAS Header Standard Reports',
-                                            
-            //                               'sourceServer' : '(localdb)\\MSSQLLocalDB', 
-
-            //                                'sourceDetails' : [ 
-            //                                                    { 'database' : 'KPI_Database', 'table' : 'dbo.Table1', 'alias' : 'a'}
-                                                                
-            //                                                  ],
-
-            //                                'destinationDetails' : { 'server' : '(localdb)\\MSSQLLocalDB', 'database' : 'KPI_Database', 'table' : 'dbo.NEW', 'createTable' : true},
-
-            //                                'mappingDetails' : [
-            //                                                    { 'destination' : 'Id',     'source' : 'Id' },
-            //                                                    { 'destination' : 'FName',  'source' : 'FirstName'},
-            //                                                    { 'destination' : 'LName',  'source' : 'LastName'}
-            //                                                   ],
-
-            //                                'sourceFilter' : 'FirstName=\'Charlie\''
-            //                            }";
-
-
-            //public static string Text = @"{
-            //                                'mappingName' : 'Aetna ACAS Header Standard Reports',
-
-            //                               'sourceServer' : 'aetna.sql.prd.ccaintranet.com', 
-
-            //                                'sourceDetails' : [ 
-            //                                                    { 'database' : 'AetnaStandardReports', 'table' : 'dbo.cnlyClaimHeader', 'alias' : 'a'}
-
-            //                                                  ],
-
-            //                                'destinationDetails' : { 'server' : 'aetna.sql.prd.ccaintranet.com', 'database' : 'AetnaStandardReports', 'table' : 'dbo.CommonCDM'},
-
-            //                                'mappingDetails' : [
-            //                                                    { 'destination' : 'claimKey',       'source' : 'RCEClaimNum' },
-            //                                                    { 'destination' : 'CnlyClaimNum',   'source' : 'ClaimNum'},
-            //                                                    { 'destination' : 'ProviderNumber', 'source' : 'ProviderId'},
-            //                                                    { 'destination' : 'MemberNumber',   'source' : 'UniqMemberId'},
-            //                                                    { 'destination' : 'GroupNumber',    'source' : 'EmpGrpNum'},
-            //                                                    { 'destination' : 'TaxId',          'source' : 'ProvTaxId'}
-            //                                                   ]
-            //                            }";
-
-
-
-
-
-            /*
-             ,
-
-                                            'sourceFilters' : [
-                                                                {'comparisonOperator' : '=', 'leftColumn' : 'ClaimNum', 'rightColumn' : 'b'}
-                                                            ]
-             */
-
-
-
-            //--Single Array that works
-            //public static string Text = @"{
-            //                                'mappingName' : 'Aetna ACAS Header Standard Reports',
-
-            //                                'sourceDetails' : [ { 'connection' : 'aetna.sql.stg.ccaintranet.com', 
-            //                                             'database' : 'AetnaStandardReports',
-            //                                             'table' : 'dbo.cnlyClaimHeader'
-            //                                           }],
-
-            //                                'destination' : 'aetna.sql.stg.ccaintranet.com',
-
-            //                                'mapping' : 'claimKey'
-
-            //                            }";
-
-
-            //--No Array
-            //public static string Text = @"{
-            //                                'mappingName' : 'Aetna ACAS Header Standard Reports',
-
-            //                                'source' : { 'connection' : 'aetna.sql.stg.ccaintranet.com', 
-            //                                             'database' : 'AetnaStandardReports',
-            //                                             'table' : 'dbo.cnlyClaimHeader'
-            //                                           },
-
-            //                                'destination' : 'aetna.sql.stg.ccaintranet.com',
-
-            //                                'mapping' : 'claimKey'
-
-            //                            }";
         }
     }
 }

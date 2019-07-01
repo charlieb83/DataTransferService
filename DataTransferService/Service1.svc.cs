@@ -33,23 +33,23 @@ namespace DataTransferService
 
 
         //CANT HAVE METHOD OVERLOAD IN WCF!!!!
-        public string MoveData(string jsonCDM, string jsonReport)
-        {
-            //TODO: Validate JSON
-            string ret = "";
-            string sqlStatement = "";
+        //public string MoveData(string jsonCDM, string jsonReport)
+        //{
+        //    //TODO: Validate JSON
+        //    string ret = "";
+        //    string sqlStatement = "";
 
-            //Deserialize JSON into SqlMapping DataContract
-            SqlMapping sm = JsonConvert.DeserializeObject<SqlMapping>(jsonCDM);
-            ReportMapping rm = JsonConvert.DeserializeObject<ReportMapping>(jsonReport);
-            Console.WriteLine(rm.ReportSource);
-            SqlDataBCP BCP = new SqlDataBCP(sm, rm);
+        //    //Deserialize JSON into SqlMapping DataContract
+        //    SqlMapping sm = JsonConvert.DeserializeObject<SqlMapping>(jsonCDM);
+        //    ReportMapping rm = JsonConvert.DeserializeObject<ReportMapping>(jsonReport);
+        //    Console.WriteLine(rm.ReportSource);
+        //    SqlDataBCP BCP = new SqlDataBCP(sm, rm);
 
-            sqlStatement = BCP.BuildSqlWithReportStatement();
-            ret = BCP.TransferData(sqlStatement);
+        //    sqlStatement = BCP.BuildSqlWithReportStatement();
+        //    ret = BCP.TransferData(sqlStatement);
 
-            return ret;     // sqlStatement; //ret;
-        }
+        //    return ret;     // sqlStatement; //ret;
+        //}
 
     }
 }

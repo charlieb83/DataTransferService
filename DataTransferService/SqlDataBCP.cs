@@ -9,62 +9,11 @@ namespace DataTransferService
     public class SqlDataBCP
     {
         private SqlMapping sm;      //Main Sql Mapping
-        private ReportMapping rm;   //Report Mapping to Main
-
-        //private string destinationServer;
-        //private string destinationDatabase;
-        //private string destinationTable;
-        //private bool destinationCreateTable;
-
 
         public SqlDataBCP(SqlMapping pSM)
         {
             sm = pSM;
-            //destinationServer = sm.DestinationDetails.Server;
-            //destinationDatabase = sm.DestinationDetails.Database;
-            //destinationTable = sm.DestinationDetails.Table;
-            //destinationCreateTable = sm.DestinationDetails.createTable;
         }
-
-
-        public SqlDataBCP(SqlMapping pSM, ReportMapping pRM)
-        {
-            sm = pSM;
-            rm = pRM;
-        }
-
-
-
-        //Assembles SQL Statement with Report Join
-        public string BuildSqlWithReportStatement()
-        {
-            string sqlStatement = "";
-            string mainSql = "";
-            string reportMappingColumns = "";
-            mainSql = BuildMainSqlStatement();
-
-            //Add additional columns from Report Mapping
-            foreach (ReportMappingDetail r in rm.ReportMappingDetails)
-            {
-                reportMappingColumns = reportMappingColumns + ", " + r.Destination + " = Y." + r.Source + System.Environment.NewLine;
-            }
-
-            sqlStatement = "SELECT X.* " + reportMappingColumns;
-            sqlStatement = sqlStatement + "FROM ( " + mainSql + " ) AS X ";  // + System.Environment.NewLine;
-            sqlStatement = sqlStatement + "INNER JOIN " + rm.ReportSource + " AS Y ON ";
-
-            //Add the join details
-            foreach (JoinToCdmDetail j in rm.JoinToCdmDetails)
-            {
-                sqlStatement = sqlStatement + " Y." + j.ReportSourceColumn + " = X." + j.CdmColumn + System.Environment.NewLine;
-                sqlStatement = sqlStatement + "AND";
-            }
-            //Remove last "AND"
-            sqlStatement = sqlStatement.Substring(0, sqlStatement.Length - 3);
-
-            return sqlStatement;  //retVal;
-        }
-
 
         //Assembles Main Source SQL Statement
         public string BuildMainSqlStatement()
@@ -95,14 +44,54 @@ namespace DataTransferService
             //Concatnate all sections
             sqlStatement = sqlColumns + System.Environment.NewLine + sqlFrom + System.Environment.NewLine + sqlWhere;
 
-            //COMMENT FOR TESTING:
-            //string sourceConnectString = GetConnectionString(sm.SourceServer, "master");
-            //string destinationConnectString = GetConnectionString(destinationServer, destinationDatabase);
-            //retVal = TransferData(sourceConnectString, destinationConnectString, destinationTable, sqlStatement);
-            //COMMENT FOR TESTING:
+            if (sm.ReportToCdmDetails != null)
+            {
+                //Console.WriteLine(sm.ReportToCdmDetails.ReportWhere);
+                sqlStatement = BuildSqlWithReportStatement(sqlStatement);
+            }
 
             return sqlStatement;
         }
+
+
+
+        //Assembles and Returns the SQL Statement For Report Join
+        private string BuildSqlWithReportStatement(string mainCdmSql)
+        {
+            string sqlStatement = "";
+            string cdmQueryAlias = "X";
+            string reportTableAlias = "Y";
+            string reportMappingColumns = "";
+
+            //Add additional columns from Report Mapping
+            foreach (ReportMappingDetail r in sm.ReportToCdmDetails.ReportMappingDetails)
+            {
+                reportMappingColumns = reportMappingColumns + ", " + r.Destination + " = " + reportTableAlias + "." + r.Source + System.Environment.NewLine;
+            }
+            sqlStatement = "SELECT X.* " + reportMappingColumns;
+            sqlStatement = sqlStatement + " FROM ( " + mainCdmSql + " ) AS " + cdmQueryAlias + System.Environment.NewLine;
+            sqlStatement = sqlStatement + " INNER JOIN " + sm.ReportToCdmDetails.ReportSource + " AS " + reportTableAlias + " ON ";
+
+            //Add the join details
+            foreach (ReportJoinToCdmDetail j in sm.ReportToCdmDetails.ReportJoinToCdmDetails)
+            {
+                sqlStatement = sqlStatement + " " + reportTableAlias + "." + j.ReportSourceColumn + " = " + cdmQueryAlias + "." + j.CdmColumn + System.Environment.NewLine;
+                sqlStatement = sqlStatement + "AND";
+            }
+            //Remove last "AND"
+            sqlStatement = sqlStatement.Substring(0, sqlStatement.Length - 3);
+
+            //Where TODO: Should really add alias after WHERE .... Y
+            string sqlWhere = "";
+            if (sm.ReportToCdmDetails.ReportWhere != null)
+            {
+                sqlWhere = "WHERE " + reportTableAlias + "." + sm.ReportToCdmDetails.ReportWhere + System.Environment.NewLine; ;
+            }
+            sqlStatement = sqlStatement + System.Environment.NewLine + sqlWhere;
+
+            return sqlStatement;
+        }
+
 
 
         //private string TransferData(string sourceConnectionString, string destinationConnectionString, string destinationTable, string sqlStatement)
@@ -112,9 +101,6 @@ namespace DataTransferService
             //COMMENT FOR TESTING:
             string sourceConnectionString = GetConnectionString(sm.SourceServer, "master");
             string destinationConnectionString = GetConnectionString(sm.DestinationDetails.Server, sm.DestinationDetails.Database);
-            //retVal = TransferData(sourceConnectString, destinationConnectString, destinationTable, sqlStatement);
-            //COMMENT FOR TESTING:
-            //Server=(localdb)\MyInstance;Integrated Security=true;
 
             //Set Source and Destination Connection Strings
             SqlConnection sourceConnection = new SqlConnection();
@@ -151,7 +137,6 @@ namespace DataTransferService
                 tempSourceConnection.Close();
             }
 
-
             SqlCommand commandSourceData = new SqlCommand(sqlStatement, sourceConnection);
             SqlDataReader reader = commandSourceData.ExecuteReader();
 
@@ -182,7 +167,6 @@ namespace DataTransferService
                 }
                 finally
                 {
-                    // Close the SqlDataReader. The SqlBulkCopy object is closed at end of using block.
                     reader.Close();
                 }
             }
